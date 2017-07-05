@@ -1,6 +1,6 @@
 import React, { PropTypes } from 'react';
 import Header from './components/Header';
-import QRCode from 'qrcode.react';
+import QRCode from './components/QRCode';
 
 require('./stylesheets/main.css');
 

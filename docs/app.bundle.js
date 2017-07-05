@@ -65,7 +65,7 @@
 /******/ 	}
 /******/ 	
 /******/ 	var hotApplyOnUpdate = true;
-/******/ 	var hotCurrentHash = "c4a33354a9ee27f861b7"; // eslint-disable-line no-unused-vars
+/******/ 	var hotCurrentHash = "1e0307abd5f7d134936d"; // eslint-disable-line no-unused-vars
 /******/ 	var hotCurrentModuleData = {};
 /******/ 	var hotCurrentParents = []; // eslint-disable-line no-unused-vars
 /******/ 	
@@ -24040,9 +24040,9 @@
 
 	var _Header2 = _interopRequireDefault(_Header);
 
-	var _qrcode = __webpack_require__(209);
+	var _QRCode = __webpack_require__(209);
 
-	var _qrcode2 = _interopRequireDefault(_qrcode);
+	var _QRCode2 = _interopRequireDefault(_QRCode);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -24052,7 +24052,7 @@
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	__webpack_require__(219);
+	__webpack_require__(220);
 
 	var Home = function (_React$Component) {
 	  _inherits(Home, _React$Component);
@@ -24087,7 +24087,7 @@
 	              } },
 	            this.state.content
 	          ),
-	          _react2.default.createElement(_qrcode2.default, { value: this.state.content, size: 300 })
+	          _react2.default.createElement(_QRCode2.default, { value: this.state.content, size: 300 })
 	        )
 	      );
 	    }
@@ -24282,29 +24282,26 @@
 /* 209 */
 /***/ (function(module, exports, __webpack_require__) {
 
+	/* WEBPACK VAR INJECTION */(function(module) {/* REACT HOT LOADER */ if (true) { (function () { var ReactHotAPI = __webpack_require__(13), RootInstanceProvider = __webpack_require__(21), ReactMount = __webpack_require__(23), React = __webpack_require__(113); module.makeHot = module.hot.data ? module.hot.data.makeHot : ReactHotAPI(function () { return RootInstanceProvider.getRootInstances(ReactMount); }, React); })(); } try { (function () {
+
 	'use strict';
 
 	var React = __webpack_require__(113);
-	// qr.js doesn't handle error level of zero (M) so we need to do it right,
-	// thus the deep require.
-	var QRCodeImpl = __webpack_require__(210);
-	var ErrorCorrectLevel = __webpack_require__(214);
+	var ReactDOM = __webpack_require__(114);
+	var qr = __webpack_require__(210);
 
 	function getBackingStorePixelRatio(ctx) {
 	  return ctx.webkitBackingStorePixelRatio || ctx.mozBackingStorePixelRatio || ctx.msBackingStorePixelRatio || ctx.oBackingStorePixelRatio || ctx.backingStorePixelRatio || 1;
 	}
 
 	var getDOMNode;
-	// Super naive semver detection but it's good enough. We support 0.12, 0.13
-	// which both have getDOMNode on the ref. 0.14 and 15 make the DOM node the ref.
-	var version = React.version.split(/[.-]/);
-	if (version[0] === '0' && version[1] === '13' || version[1] === '12') {
+	if (/^0\.14/.test(React.version)) {
 	  getDOMNode = function getDOMNode(ref) {
-	    return ref.getDOMNode();
+	    return ref;
 	  };
 	} else {
 	  getDOMNode = function getDOMNode(ref) {
-	    return ref;
+	    return ReactDOM.findDOMNode(ref);
 	  };
 	}
 
@@ -24314,7 +24311,6 @@
 	  propTypes: {
 	    value: React.PropTypes.string.isRequired,
 	    size: React.PropTypes.number,
-	    level: React.PropTypes.oneOf(['L', 'M', 'Q', 'H']),
 	    bgColor: React.PropTypes.string,
 	    fgColor: React.PropTypes.string
 	  },
@@ -24322,17 +24318,16 @@
 	  getDefaultProps: function getDefaultProps() {
 	    return {
 	      size: 128,
-	      level: 'L',
 	      bgColor: '#FFFFFF',
-	      fgColor: '#000000'
+	      fgColor: '#000000',
+	      value: ''
 	    };
 	  },
 
 	  shouldComponentUpdate: function shouldComponentUpdate(nextProps) {
-	    var _this = this;
-
+	    var that = this;
 	    return Object.keys(QRCode.propTypes).some(function (k) {
-	      return _this.props[k] !== nextProps[k];
+	      return that.props[k] !== nextProps[k];
 	    });
 	  },
 
@@ -24344,38 +24339,46 @@
 	    this.update();
 	  },
 
+	  utf16to8: function utf16to8(str) {
+	    var out, i, len, c;
+	    out = "";
+	    len = str.length;
+	    for (i = 0; i < len; i++) {
+	      c = str.charCodeAt(i);
+	      if (c >= 0x0001 && c <= 0x007F) {
+	        out += str.charAt(i);
+	      } else if (c > 0x07FF) {
+	        out += String.fromCharCode(0xE0 | c >> 12 & 0x0F);
+	        out += String.fromCharCode(0x80 | c >> 6 & 0x3F);
+	        out += String.fromCharCode(0x80 | c >> 0 & 0x3F);
+	      } else {
+	        out += String.fromCharCode(0xC0 | c >> 6 & 0x1F);
+	        out += String.fromCharCode(0x80 | c >> 0 & 0x3F);
+	      }
+	    }
+	    return out;
+	  },
+
 	  update: function update() {
-	    var _props = this.props;
-	    var value = _props.value;
-	    var size = _props.size;
-	    var level = _props.level;
-	    var bgColor = _props.bgColor;
-	    var fgColor = _props.fgColor;
-
-	    // We'll use type===-1 to force QRCode to automatically pick the best type
-
-	    var qrcode = new QRCodeImpl(-1, ErrorCorrectLevel[level]);
-	    qrcode.addData(value);
-	    qrcode.make();
-
+	    var value = this.utf16to8(this.props.value);
+	    var qrcode = qr(value);
 	    var canvas = getDOMNode(this.refs.canvas);
 
 	    var ctx = canvas.getContext('2d');
 	    var cells = qrcode.modules;
-	    var tileW = size / cells.length;
-	    var tileH = size / cells.length;
-	    var scale = (window.devicePixelRatio || 1) / getBackingStorePixelRatio(ctx);
-	    canvas.height = canvas.width = size * scale;
+	    var tileW = this.props.size / cells.length;
+	    var tileH = this.props.size / cells.length;
+	    var scale = window.devicePixelRatio / getBackingStorePixelRatio(ctx);
+	    canvas.height = canvas.width = this.props.size * scale;
 	    ctx.scale(scale, scale);
-
 	    cells.forEach(function (row, rdx) {
 	      row.forEach(function (cell, cdx) {
-	        ctx.fillStyle = cell ? fgColor : bgColor;
+	        ctx.fillStyle = cell ? this.props.fgColor : this.props.bgColor;
 	        var w = Math.ceil((cdx + 1) * tileW) - Math.floor(cdx * tileW);
 	        var h = Math.ceil((rdx + 1) * tileH) - Math.floor(rdx * tileH);
 	        ctx.fillRect(Math.round(cdx * tileW), Math.round(rdx * tileH), w, h);
-	      });
-	    });
+	      }, this);
+	    }, this);
 	  },
 
 	  render: function render() {
@@ -24390,15 +24393,41 @@
 
 	module.exports = QRCode;
 
+	/* REACT HOT LOADER */ }).call(this); } finally { if (true) { (function () { var foundReactClasses = module.hot.data && module.hot.data.foundReactClasses || false; if (module.exports && module.makeHot) { var makeExportsHot = __webpack_require__(206); if (makeExportsHot(module, __webpack_require__(113))) { foundReactClasses = true; } var shouldAcceptModule = true && foundReactClasses; if (shouldAcceptModule) { module.hot.accept(function (err) { if (err) { console.error("Cannot apply hot update to " + "QRCode.js" + ": " + err.message); } }); } } module.hot.dispose(function (data) { data.makeHot = module.makeHot; data.foundReactClasses = foundReactClasses; }); })(); } }
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(2)(module)))
+
 /***/ }),
 /* 210 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var BitByte = __webpack_require__(211);
-	var RSBlock = __webpack_require__(213);
-	var BitBuffer = __webpack_require__(215);
-	var util = __webpack_require__(216);
-	var Polynomial = __webpack_require__(217);
+	var QRCode = __webpack_require__(211);
+	var ErrorCorrectLevel = __webpack_require__(215);
+
+	var qrcode = function(data, opt) {
+		opt = opt || {};
+		var qr = new QRCode(opt.typeNumber || -1,
+							opt.errorCorrectLevel || ErrorCorrectLevel.H);
+		qr.addData(data);
+		qr.make();
+
+		return qr;
+	};
+
+	qrcode.ErrorCorrectLevel = ErrorCorrectLevel;
+
+	module.exports = qrcode;
+
+
+
+/***/ }),
+/* 211 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	var BitByte = __webpack_require__(212);
+	var RSBlock = __webpack_require__(214);
+	var BitBuffer = __webpack_require__(216);
+	var util = __webpack_require__(217);
+	var Polynomial = __webpack_require__(218);
 
 	function QRCode(typeNumber, errorCorrectLevel) {
 		this.typeNumber = typeNumber;
@@ -24835,10 +24864,10 @@
 
 
 /***/ }),
-/* 211 */
+/* 212 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var mode = __webpack_require__(212);
+	var mode = __webpack_require__(213);
 
 	function QR8bitByte(data) {
 		this.mode = mode.MODE_8BIT_BYTE;
@@ -24864,7 +24893,7 @@
 
 
 /***/ }),
-/* 212 */
+/* 213 */
 /***/ (function(module, exports) {
 
 	module.exports = {
@@ -24876,11 +24905,11 @@
 
 
 /***/ }),
-/* 213 */
+/* 214 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// ErrorCorrectLevel
-	var ECL = __webpack_require__(214);
+	var ECL = __webpack_require__(215);
 
 	function QRRSBlock(totalCount, dataCount) {
 		this.totalCount = totalCount;
@@ -25181,7 +25210,7 @@
 
 
 /***/ }),
-/* 214 */
+/* 215 */
 /***/ (function(module, exports) {
 
 	module.exports = {
@@ -25194,7 +25223,7 @@
 
 
 /***/ }),
-/* 215 */
+/* 216 */
 /***/ (function(module, exports) {
 
 	function QRBitBuffer() {
@@ -25238,12 +25267,12 @@
 
 
 /***/ }),
-/* 216 */
+/* 217 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var Mode = __webpack_require__(212);
-	var Polynomial = __webpack_require__(217);
-	var math = __webpack_require__(218);
+	var Mode = __webpack_require__(213);
+	var Polynomial = __webpack_require__(218);
+	var math = __webpack_require__(219);
 
 	var QRMaskPattern = {
 		PATTERN000 : 0,
@@ -25523,10 +25552,10 @@
 
 
 /***/ }),
-/* 217 */
+/* 218 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	var math = __webpack_require__(218);
+	var math = __webpack_require__(219);
 
 	function QRPolynomial(num, shift) {
 
@@ -25596,7 +25625,7 @@
 
 
 /***/ }),
-/* 218 */
+/* 219 */
 /***/ (function(module, exports) {
 
 	var QRMath = {
@@ -25646,23 +25675,23 @@
 
 
 /***/ }),
-/* 219 */
+/* 220 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	// style-loader: Adds some css to the DOM by adding a <style> tag
 
 	// load the styles
-	var content = __webpack_require__(220);
+	var content = __webpack_require__(221);
 	if(typeof content === 'string') content = [[module.id, content, '']];
 	// add the styles to the DOM
-	var update = __webpack_require__(222)(content, {});
+	var update = __webpack_require__(223)(content, {});
 	if(content.locals) module.exports = content.locals;
 	// Hot Module Replacement
 	if(true) {
 		// When the styles change, update the <style> tags
 		if(!content.locals) {
-			module.hot.accept(220, function() {
-				var newContent = __webpack_require__(220);
+			module.hot.accept(221, function() {
+				var newContent = __webpack_require__(221);
 				if(typeof newContent === 'string') newContent = [[module.id, newContent, '']];
 				update(newContent);
 			});
@@ -25672,10 +25701,10 @@
 	}
 
 /***/ }),
-/* 220 */
+/* 221 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	exports = module.exports = __webpack_require__(221)();
+	exports = module.exports = __webpack_require__(222)();
 	// imports
 
 
@@ -25686,7 +25715,7 @@
 
 
 /***/ }),
-/* 221 */
+/* 222 */
 /***/ (function(module, exports) {
 
 	/*
@@ -25742,7 +25771,7 @@
 
 
 /***/ }),
-/* 222 */
+/* 223 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/*
