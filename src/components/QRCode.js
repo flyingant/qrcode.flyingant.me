@@ -15,11 +15,11 @@ function getBackingStorePixelRatio(ctx) {
 
 var getDOMNode;
 if (/^0\.14/.test(React.version)) {
-  getDOMNode = function(ref) {
+  getDOMNode = function (ref) {
     return ref;
   }
 } else {
-  getDOMNode = function(ref) {
+  getDOMNode = function (ref) {
     return ReactDOM.findDOMNode(ref);
   }
 }
@@ -32,7 +32,7 @@ var QRCode = React.createClass({
     fgColor: React.PropTypes.string,
   },
 
-  getDefaultProps: function() {
+  getDefaultProps: function () {
     return {
       size: 128,
       bgColor: '#FFFFFF',
@@ -41,24 +41,24 @@ var QRCode = React.createClass({
     };
   },
 
-  shouldComponentUpdate: function(nextProps) {
+  shouldComponentUpdate: function (nextProps) {
     var that = this;
-    return Object.keys(QRCode.propTypes).some(function(k) {
+    return Object.keys(QRCode.propTypes).some(function (k) {
       return that.props[k] !== nextProps[k];
     });
   },
 
-  componentDidMount: function() {
+  componentDidMount: function () {
     this.update();
   },
 
-  componentDidUpdate: function() {
+  componentDidUpdate: function () {
     this.update();
   },
 
-  utf16to8: function(str) {
+  utf16to8: function (str) {
     var out, i, len, c;
-    out = "";
+    out = '';
     len = str.length;
     for (i = 0; i < len; i++) {
       c = str.charCodeAt(i);
@@ -76,7 +76,7 @@ var QRCode = React.createClass({
     return out;
   },
 
-  update: function() {
+  update: function () {
     var value = this.utf16to8(this.props.value);
     var qrcode = qr(value);
     var canvas = getDOMNode(this.refs.canvas);
@@ -88,8 +88,8 @@ var QRCode = React.createClass({
     var scale = window.devicePixelRatio / getBackingStorePixelRatio(ctx);
     canvas.height = canvas.width = this.props.size * scale;
     ctx.scale(scale, scale);
-    cells.forEach(function(row, rdx) {
-      row.forEach(function(cell, cdx) {
+    cells.forEach(function (row, rdx) {
+      row.forEach(function (cell, cdx) {
         ctx.fillStyle = cell ? this.props.fgColor : this.props.bgColor;
         var w = (Math.ceil((cdx + 1) * tileW) - Math.floor(cdx * tileW));
         var h = (Math.ceil((rdx + 1) * tileH) - Math.floor(rdx * tileH));
@@ -98,9 +98,9 @@ var QRCode = React.createClass({
     }, this);
   },
 
-  render: function() {
+  render: function () {
     return React.createElement('canvas', {
-      style: { height: this.props.size, width: this.props.size },
+      style: {height: this.props.size, width: this.props.size},
       height: this.props.size,
       width: this.props.size,
       ref: 'canvas'
